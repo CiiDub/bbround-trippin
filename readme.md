@@ -61,7 +61,7 @@ Server_Prompt$ ssh userC@my_macintosh.local bbedit "sftp://userS@my_server.local
 
 ### Your mac is your safe place.
 
-Even hardcoding your username can be avoided. Even though your hostname/ip can be surmised on the server I think it’s more flexible to declare it in a variable on you make and set it as part of your SSH env. 
+Even hardcoding your username can be avoided. Though your hostname/ip can be surmised on the server I think it’s more flexible to declare it in a variable on your mac, client side, and set it as part of your SSH enviroment.
 
 That is what __BB\_user__ and __BB\_host__ are for.
 
