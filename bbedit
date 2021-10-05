@@ -1,0 +1,51 @@
+#!/usr/bin/env sh
+
+run_me () {
+	if test -z $BB_user || test -z $BB_host
+	then
+		# Exit script if env variables are not configured.
+		echo "BBRound Trippn (bbedit) needs the env variables BB_user and BB_host to be set."
+		return
+	fi
+	
+	back_to_client="$BB_user@$BB_host"
+	
+	if test -t 0
+	then
+		# Input is a File.
+		host_server=$( hostname )
+		params=$( echo $@ | awk '{ $NF=""; print $0 }' )
+		filepath=$( realpath $( echo $@ | awk '{ print $NF }' ) 2> /dev/null )
+		
+		if test $? -eq 1
+		then
+			# If realpath exits with an error then it's not a real path.
+			echo "You must provide a file or directory as the last parameter or pipe input from STDIN."
+			return 
+		fi		
+		
+		# Add a backslash if the param is a directory.
+		if test -d $filepath
+		then	
+			filepath="$filepath/"
+		fi
+		
+		# Open file or directory from the server on the client, if it exists and is readable.
+		if test -r $filepath || test -d $filepath
+		then
+			ssh $back_to_client bbedit $params \"sftp://$USER@$host_server/$filepath\"
+		elif test -f $filepath
+		then
+			echo "Check permissions on this file."
+		else
+			echo "This file or directory can't be found."
+		fi
+		
+	else
+		# Input is from pipe. Example: ls | bbedit
+		# Open bbedit on client with piped text from server.
+		ssh $back_to_client bbedit $@
+	fi
+}
+
+run_me $@
