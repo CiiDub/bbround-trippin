@@ -42,11 +42,11 @@ I’d like to offer a setup that is at least reasonable, if not diligent.
 
 - I’m also betting you know a little about SSH key authentication. 
 
-- Finally, you should familiar with the command line, and setting env variables.
+- Finally, you should be familiar with the command line, and setting env variables.
 
 
 ### The breakdown.
-1) Your client computer is a mac opening an SSH session with a Unix style server.
+1) Your client computer is a mac (with BBEdit installed) opening an SSH session with a Unix style server.
 
 1) When you open a file with```Server_Prompt$ bbedit file_name.txt``` the script sends that command and properly formatted parameters back to your mac via SSH.
 
@@ -73,7 +73,7 @@ __~/.bash_profile__
 export BB_user="userC"
 export BB_host="$(hostname)"
 ```
-The BB_host might be setup a number of ways. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time, even on your home network. 
+There are a number of ways to setup BB\_host. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time, even on your home network. 
 
 You also might set a domain like my\_registered\_domain.com if you want to point back at your mac from outside your network.
 
@@ -111,14 +111,12 @@ Add your public key to __~/.ssh/authorized_keys__
 Set up your __~.ssh/config__ like so.
 
 ```
-Host *
-  	AddKeysToAgent yes
-	IdentityFile ~/.ssh/<private_key>
-
 Host the_server
 	HostName my_server.local
 	User userS
 	SendEnv BB_user BB_host
+	AddKeysToAgent yes
+	IdentityFile ~/.ssh/<private_key>
 	ForwardAgent yes
 ```
 
