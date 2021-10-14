@@ -1,8 +1,11 @@
 # BBRound Trippin’
 ## Open files with the ```bbedit``` cli-tool from the server.
 
-Use it in a very similar way as you would with local files:
+[BBEdit](https://www.barebones.com/products/bbedit/) is a stalwart commercial text editor for the Macintosh computer.
 
+It offers a [Command-line tool](https://www.barebones.com/products/bbedit/benefitscommand.html#commandline): __bbedit__. This script invokes it over SSH.
+
+Use it in a very similar way as you would with local files:
 
 - ```Server_Prompt$ bbedit file.txt``` --> _opens file.txt._
 
