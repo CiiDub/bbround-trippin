@@ -76,9 +76,9 @@ __~/.bash_profile__
 export BB_user="userC"
 export BB_host="$(hostname)"
 ```
-There are a number of ways to setup BB\_host. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time, even on your home network. 
+There are a number of ways to setup BB\_host. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time.
 
-You also might set a domain like my\_registered\_domain.com if you want to point back at your mac from outside your network.
+You also might set a domain like back\_to\_me\_domain.net if you want to point back at your mac from outside your network.
 
 #### Send the variables to your SSH session:
 
@@ -100,6 +100,24 @@ Host the_server
 
 Now when you ```ssh the_server```it will add __BB\_user__ and __BB\_host__ to that sessions environment.
 
+#### An alternative to declaring __BB\_user__ and __BB\_host__ in your local environment.
+
+OpenSSH added the configuration `SetEnv` in late 2018. You can check `man ssh_config` to see if your version supports it. It’s a better option as you can configure BBRound Trippn’ in __~.ssh/config__ on a host by host basis.
+
+```
+Host local_server
+	HostName my_server.local
+	User userS
+	SetEnv BB_user=userC BB_host=my_macintosh.local
+	SendEnv BB_user BB_host
+
+Host remote_server
+	HostName my_server.net
+	User userRS
+	SetEnv BB_user=userC BB_host=back_to_me_domain.net
+	SendEnv BB_user BB_host
+```
+
 #### Authentication and the SSH Agent:
 
 [Don’t use a password](https://medium.com/macoclock/set-up-ssh-on-macos-89e8354d8b63
@@ -117,6 +135,7 @@ Set up your __~.ssh/config__ like so.
 Host the_server
 	HostName my_server.local
 	User userS
+	SetEnv BB_user=userC BB_host=my_macintosh.local
 	SendEnv BB_user BB_host
 	AddKeysToAgent yes
 	IdentityFile ~/.ssh/<private_key>
