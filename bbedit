@@ -15,7 +15,7 @@ run_me () {
 		# Input is a File.
 		host_server=$( hostname )
 		params=$( echo "$@" | awk '{ $NF=""; print $0 }' )
-		filepath=$( realpath "$( echo "$@" | awk '{ print $NF }' )" 2> /dev/null )
+		filepath=$( readlink -f "$( echo "$@" | awk '{ print $NF }' )" 2> /dev/null )
 		
 		if test $? -eq 1
 		then
