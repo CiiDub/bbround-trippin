@@ -1,51 +1,57 @@
 #!/usr/bin/env sh
 
-run_me () {
-	if test -z "$BB_user" || test -z "$BB_host"
+create_tmp_file_if_flag(){
+	# If param is -c, --create, -u or --create-unix create file.
+	[ -e "$filepath" ] && return # Don't write over a file by accident.
+	echo "$params" | grep -Eq -e '--create-unix|--create|-c|-u' || return
+	touch "$filepath" && tmp_file=1
+}
+
+delete_tmp_file(){
+	[ $tmp_file -eq 1 ] || return
+	rm "$filepath"
+}
+
+is_valid_file_dir(){
+	# Chceck if file or dir exists and is readable.
+	[ -e "$filepath" ] || { echo "This file does not exits."; exit 1; }
+	[ -r "$filepath" ] || { echo "Check permissions on this file."; exit 1; }
+}
+
+expand_filepath(){
+	# Add a backslash and return if directory.
+	filepath=$(realpaths "$filepath" 2> /dev/null || readlink -f "$filepath" 2> /dev/null)
+	[ -d "$filepath" ] && filepath="${filepath}/"
+}
+
+run_me(){
+	
+	if [ -z "$BB_user" ] || [ -z "$BB_host" ]
 	then
-		# Exit script if env variables are not configured.
 		echo "BBRound Trippn (bbedit) needs the env variables BB_user and BB_host to be set."
-		return
+		exit 1
 	fi
 	
 	back_to_client="${BB_user}@${BB_host}"
 	
-	if test -t 0
-	then
-		# Input is a File.
-		host_server=$( hostname )
-		params=$( echo "$@" | awk '{ $NF=""; print $0 }' )
-		filepath=$( readlink -f "$( echo "$@" | awk '{ print $NF }' )" 2> /dev/null )
-		
-		if test $? -eq 1
-		then
-			# If realpath exits with an error then it's not a real path.
-			echo "You must provide a file or directory as the last parameter or pipe input from STDIN."
-			return 
-		fi		
-		
-		# Add a backslash if the param is a directory.
-		if test -d "$filepath"
-		then	
-			filepath="${filepath}/"
-		fi
-		
-		# Open file or directory from the server on the client, if it exists and is readable.
-		if test -r "$filepath" || test -d "$filepath"
-		then
-			ssh "$back_to_client" bbedit "$params" \"sftp://"${USER}"@"${host_server}"/"${filepath}"\"
-		elif test -f "$filepath"
-		then
-			echo "Check permissions on this file."
-		else
-			echo "This file or directory can't be found."
-		fi
-		
-	else
-		# Input is from pipe. Example: ls | bbedit
-		# Open bbedit on client with piped text from server.
-		ssh "$back_to_client" bbedit "$@"
-	fi
+	# Input is from STDIN. Example: ls | bbedit
+	# Open bbedit on client with piped text from server.
+	[ -t 0 ] || { ssh "$back_to_client" bbedit "$@"; exit 0; }
+
+	# Input is a file from a tty.
+	host_server=$( hostname )
+	params=$( echo "$@" | awk '{ $NF=""; print $0 }' )
+	filepath=$( echo "$@" | awk '{ print $NF }' )
+	
+	tmp_file=0
+	create_tmp_file_if_flag
+	
+	is_valid_file_dir
+	expand_filepath
+	
+	# File is a param 	
+	ssh "$back_to_client" bbedit "$params" \"sftp://"${USER}"@"${host_server}"/"${filepath}"\"
+	delete_tmp_file
 }
 
 run_me "$@"
