@@ -1,0 +1,64 @@
+#!/usr/bin/env sh
+
+setup_BB_vars(){
+	# BB_user needs to be set.
+	[ -n  "$BB_user" ] || { echo "BBRound Trippin The variable BB_user has not been set."; exit 1; }
+	# BB_host has a default setting but can also be specified.
+	[ -n  "$BB_host" ] || {
+		BB_host="$( echo "$SSH_CLIENT" | awk '{print $1}' )" ||
+		echo "BB_host was not set and failed to set automatically." &&
+		exit 1
+	}
+}
+
+create_tmp_file_if_flag(){
+	# If param is -c, --create, -u or --create-unix create file.
+	# BBEdit uses these params locally but not when opening a file remotely.
+	[ -e "$filepath" ] && return # Don't write over a file by accident.
+	echo "$params" | grep -Eq -e '--create-unix|--create|-c|-u' || tmp_file=0 && return
+	touch "$filepath" && tmp_file=1
+}
+
+delete_tmp_file(){
+	# BBEdit doesn't create a file on disk until it is saved.
+	# The tmp_file is deleted to imitate that behavior remotely.
+	[ "$tmp_file" -eq 1 ] || return
+	rm "$filepath"
+}
+
+is_valid_file_dir(){
+	# Check if file or dir (-e)exists and is (-r)readable.
+	[ -e "$filepath" ] || { echo "This file does not exits."; exit 1; }
+	[ -r "$filepath" ] || { echo "Check permissions on this file."; exit 1; }
+}
+
+expand_filepath(){
+	# I hope this covers most setups.
+	filepath=$( realpaths "$filepath" 2> /dev/null || readlink -f "$filepath" 2> /dev/null )
+	# Add a backslash and return if is a (-d)directory.
+	[ -d "$filepath" ] && filepath="${filepath}/"
+}
+
+run_me(){	
+	setup_BB_vars
+	
+	client_login="${BB_user}@${BB_host}"
+	
+	# Input is from STDIN. Example: ls | bbedit
+	# Open BBEdit on client with piped input from server.
+	# shellcheck disable=SC2029 # Variable is meant to expand on client side.
+	[ -t 0 ] || { ssh "$client_login" bbedit "$@"; exit 0; }
+
+	# Input is a file from a tty.
+	host_server=$( hostname )
+	params=$( echo "$@" | awk '{ $NF=""; print $0 }' )
+	filepath=$( echo "$@" | awk '{ print $NF }' )
+	
+	create_tmp_file_if_flag
+	is_valid_file_dir
+	expand_filepath
+	ssh "$client_login" bbedit "$params" \"sftp://"${USER}"@"${host_server}"/"${filepath}"\"
+	delete_tmp_file
+}
+
+run_me "$@"
