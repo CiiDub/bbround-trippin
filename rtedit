@@ -1,11 +1,19 @@
 #!/usr/bin/env sh
 
 setup_BB_vars(){
+  [ -n "$SSH_CLIENT" ] || {
+    echo "This is not an SSH Connection." &&
+    exit 1
+  }
   # BB_user needs to be set.
-  [ -n  "$BB_user" ] || { echo "BBRound Trippin The variable BB_user has not been set."; exit 1; }
+  [ -n  "$BB_user" ] || {
+    echo "BBRound Trippin The variable BB_user has not been set."
+    exit 1
+  }
   # BB_host has a default setting but can also be specified.
   [ -n  "$BB_host" ] || {
-    BB_host="$( echo "$SSH_CLIENT" | awk '{print $1}' )" ||
+    BB_host="$( echo "$SSH_CLIENT" | awk '{print $1}' )"
+    [ -n "$BB_host" ] && return
     echo "BB_host was not set and failed to set automatically." &&
     exit 1
   }
@@ -14,8 +22,11 @@ setup_BB_vars(){
 create_tmp_file_if_flag(){
   # If param is -c, --create, -u or --create-unix create file.
   # BBEdit uses these params locally but not when opening a file remotely.
-  [ -e "$filepath" ] && return # Don't write over a file by accident.
-  echo "$params" | grep -Eq -e '--create-unix|--create|-c|-u' || tmp_file=0 && return
+  echo "$params" | grep -Eq -e '--create-unix|--create|-c|-u' || { 
+    tmp_file=0 &&
+    return 
+  }
+  [ -e "$filepath" ] && tmp_file=0 && return # Don't write over a file by accident.
   touch "$filepath" && tmp_file=1
 }
 
@@ -39,11 +50,9 @@ expand_filepath(){
   [ -d "$filepath" ] && filepath="${filepath}/"
 }
 
-run_me(){ 
+run_me(){
   setup_BB_vars
-  
   client_login="${BB_user}@${BB_host}"
-  
   # Input is from STDIN. Example: ls | bbedit
   # Open BBEdit on client with piped input from server.
   # shellcheck disable=SC2029 # Variable is meant to expand on client side.
