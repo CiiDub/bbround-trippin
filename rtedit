@@ -1,20 +1,24 @@
 #!/usr/bin/env sh
 
+is_a_ssh_connection(){
+	# Checks for environment variable SSH_CLIENT
+	[ -n "$SSH_CLIENT" ] || {
+	  echo "This is not an SSH connection." &&
+	  exit 1
+	}
+}
+
 setup_BB_vars(){
-  [ -n "$SSH_CLIENT" ] || {
-    echo "This is not an SSH Connection." &&
-    exit 1
-  }
   # BB_user needs to be set.
   [ -n  "$BB_user" ] || {
-    echo "BBRound Trippin The variable BB_user has not been set."
+    echo "The variable BB_user has not been set."
     exit 1
   }
   # BB_host has a default setting but can also be specified.
   [ -n  "$BB_host" ] || {
     BB_host="$( echo "$SSH_CLIENT" | awk '{print $1}' )"
     [ -n "$BB_host" ] && return
-    echo "BB_host was not set and failed to set automatically." &&
+    echo "The variable BB_host was not set and failed to set automatically." &&
     exit 1
   }
 }
@@ -51,6 +55,7 @@ expand_filepath(){
 }
 
 run_me(){
+  is_a_ssh_connection
   setup_BB_vars
   client_login="${BB_user}@${BB_host}"
   # Input is from STDIN. Example: ls | bbedit
