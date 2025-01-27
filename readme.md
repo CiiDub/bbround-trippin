@@ -27,9 +27,9 @@ Including pipes and flags:
 
 1) Make the script executable.
 
-1) Set env variable __BB_user__ to your username on the client mac.
+1) Set env variable __BB_USER__ to your username on the client mac.
 
-1) Set env variable __BB_host__ to the hostname of the client mac. -*This is optional* 
+1) Set env variable __BB_HOST__ to the hostname of the client mac. -*This is optional* 
 
 ## Admissions, assumptions, concerns, and more configurations.
 
@@ -62,23 +62,36 @@ Here is what the command would look like typed out manually:
 Server_Prompt$ ssh userC@my_macintosh.local bbedit "sftp://userS@my_server.local"
 ```
 
-### Your mac is your safe place.
-
-Try and configure as much as possible in your local SSH and shell environments. Even hardcoding your username can be avoided.
-
-This primarily means setting __BB\_user__ and __BB\_host__ localling rather than on the server.
-
-Your hostname/ip can be surmised on from your SSH connection, so __BB\_host__ is optional, even though I set it manually in all my examples.
-
-#### First declare them locally:
-
+## Declaring your BB environment variables on the server.
 __~/.bash_profile__
 
 ```bash
-export BB_user="userC"
-export BB_host="$(hostname)"
+# SSH environment
+if [ "$SSH_CONNECTION" ]
+then
+	export BB_USER="userC"
+	export BB_HOST="mymacurl.net"	
+fi
 ```
-There are a number of ways to setup BB\_host. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time.
+
+### Your mac is your safe place, maybe.
+
+Try and configure as much as possible in your local SSH and shell environments. Even hardcoding your username can be avoided.
+
+This primarily means setting __BB\_USER__ and __BB\_HOST__ localling rather than on the server.
+
+Your hostname/ip can be surmised on from your SSH connection, so __BB\_HOST__ is optional, even though I set it manually in all my examples.
+
+#### First declare them locally:
+__~/.bash_profile__
+
+```bash
+# Here be rtedit variables for ssh connections
+export BB_USER="userC"
+export BB_HOST="$(hostname)"	
+```
+
+There are a number of ways to setup BB\_HOST. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time.
 
 You also might set a domain like back\_to\_me\_domain.net if you want to point back at your mac from outside your network.
 
@@ -88,8 +101,10 @@ You have to first configure the server.
 Add this line to your __/etc/ssh/sshd_config__ on the server:
 
 ```
-AcceptEnv BB_user BB_host
+AcceptEnv BB_USER BB_HOST
 ```
+
+This does increase your servers surface area for attack. I think this is reasonable as long as you are not leaving the door wide open and declaring the specific variables you will allow. The upside is that you haven’t put any info about your Mac on the server. It lives and dies with that specific SSH connection. Tradeoffs, security is hard.
 
 Lets setup a __~.ssh/config__ on your mac
 
@@ -97,12 +112,12 @@ Lets setup a __~.ssh/config__ on your mac
 Host the_server
 	HostName my_server.local
 	User userS
-	SendEnv BB_user BB_host
+	SendEnv BB_USER BB_HOST
 ```
 
-Now when you ```ssh the_server```it will add __BB\_user__ and __BB\_host__ to that sessions environment.
+Now when you ```ssh the_server```it will add __BB\_USER__ and __BB\_HOST__ to that sessions environment.
 
-#### An alternative to declaring __BB\_user__ and __BB\_host__ in your local environment.
+#### An alternative to declaring __BB\_USER__ and __BB\_HOST__ in your local environment.
 
 OpenSSH added the configuration `SetEnv` in late 2018. You can check `man ssh_config` to see if your version supports it. It’s a better option as you can configure BBRound Trippn’ in __~.ssh/config__ on a host by host basis.
 
@@ -110,14 +125,14 @@ OpenSSH added the configuration `SetEnv` in late 2018. You can check `man ssh_co
 Host local_server
 	HostName my_server.local
 	User userS
-	SetEnv BB_user=userC BB_host=my_macintosh.local
-	SendEnv BB_user BB_host
+	SetEnv BB_USER=userC BB_HOST=my_macintosh.local
+	SendEnv BB_USER BB_HOST
 
 Host remote_server
 	HostName my_server.net
 	User userRS
-	SetEnv BB_user=userC BB_host=back_to_me_domain.net
-	SendEnv BB_user BB_host
+	SetEnv BB_USER=userC BB_HOST=back_to_me_domain.net
+	SendEnv BB_USER BB_HOST
 ```
 
 #### Authentication and the SSH Agent:
@@ -137,8 +152,8 @@ Set up your __~.ssh/config__ like so.
 Host the_server
 	HostName my_server.local
 	User userS
-	SetEnv BB_user=userC BB_host=my_macintosh.local
-	SendEnv BB_user BB_host
+	SetEnv BB_USER=userC BB_HOST=my_macintosh.local
+	SendEnv BB_USER BB_HOST
 	AddKeysToAgent yes
 	IdentityFile ~/.ssh/<private_key>
 	ForwardAgent yes

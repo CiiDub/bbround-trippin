@@ -3,24 +3,30 @@
 is_a_ssh_connection(){
 	# Checks for environment variable SSH_CLIENT
 	[ -n "$SSH_CLIENT" ] || {
-	  echo "This is not an SSH connection." &&
+	  echo "Is this an SSH connection." &&
+	  echo "Did you use sudo? Remember to pass the user enviroment with -E." &&
 	  exit 1
 	}
 }
 
 setup_BB_vars(){
-  # BB_user needs to be set.
-  [ -n  "$BB_user" ] || {
-    echo "The variable BB_user has not been set."
+  # BB_USER needs to be set.
+  [ -n  "$BB_USER" ] || {
+    echo "The variable BB_USER has not been set."
     exit 1
   }
-  # BB_host has a default setting but can also be specified.
-  [ -n  "$BB_host" ] || {
-    BB_host="$( echo "$SSH_CLIENT" | awk '{print $1}' )"
-    [ -n "$BB_host" ] && return
-    echo "The variable BB_host was not set and failed to set automatically." &&
+  # BB_HOST has a default setting but can also be specified.
+  [ -n  "$BB_HOST" ] || {
+    BB_HOST="$( echo "$SSH_CLIENT" | awk '{print $1}' )"
+    [ -n "$BB_HOST" ] && return
+    echo "The variable BB_HOST was not set and failed to set automatically." &&
     exit 1
   }
+}
+
+setup_server_user_host_string(){
+	[ -n "$BB_SSH_HOST" ] && server_user_host_string="$BB_SSH_HOST" && return
+	server_user_host_string="${USER}"@"${host_server}"
 }
 
 create_tmp_file_if_flag(){
@@ -57,7 +63,7 @@ expand_filepath(){
 run_me(){
   is_a_ssh_connection
   setup_BB_vars
-  client_login="${BB_user}@${BB_host}"
+  client_login="${BB_USER}@${BB_HOST}"
   # Input is from STDIN. Example: ls | bbedit
   # Open BBEdit on client with piped input from server.
   # shellcheck disable=SC2029 # Variable is meant to expand on client side.
@@ -70,8 +76,10 @@ run_me(){
   
   create_tmp_file_if_flag
   is_valid_file_dir
+  
+  setup_server_user_host_string
   expand_filepath
-  ssh "$client_login" bbedit "$params" \"sftp://"${USER}"@"${host_server}"/"${filepath}"\"
+  ssh "$client_login" bbedit "$params" \"sftp://"${server_user_host_string}"/"${filepath}"\"
   delete_tmp_file
 }
 
