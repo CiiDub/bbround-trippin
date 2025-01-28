@@ -17,7 +17,7 @@ Use it in a very similar way as you would with local files:
 
 Including pipes and flags:
 
-- ```Server_Prompt$ man seq | col -b | rtedit --view-top -m "unix-man-page"``` --> _Opens the manual for __seq__ in BBedit with the language set to Unix man page and the window scrolled to the top._
+- ```Server_Prompt$ man seq | col -b | rtedit --view-top -m unix-man-page``` --> _Opens the manual for __seq__ in BBedit with the language set to Unix man page and the window scrolled to the top._
 
 ## Install and configure.
 
@@ -47,7 +47,6 @@ I’d like to offer a setup that is at least reasonable, if not diligent.
 
 - Finally, you should be familiar with the command line, and setting env variables.
 
-
 ### The breakdown.
 1) Your client computer is a mac (with BBEdit installed) opening an SSH session with a Unix style server.
 
@@ -62,21 +61,24 @@ Here is what the command would look like typed out manually:
 Server_Prompt$ ssh userC@my_macintosh.local bbedit "sftp://userS@my_server.local"
 ```
 
-## Declaring your BB environment variables on the server.
+## Setting up your BB environment.
+Here are a few options in setting up __BB\_USER__ and __BB\_HOST__ with various tradeoffs.
+
+### Declaring them on the server.
 __~/.bash_profile__
 
 ```bash
 # SSH environment
 if [ "$SSH_CONNECTION" ]
 then
-	export BB_USER="userC"
-	export BB_HOST="mymacurl.net"	
+  export BB_USER="userC"
+  export BB_HOST="mymacurl.net" 
 fi
 ```
 
 ### Your mac is your safe place, maybe.
 
-Try and configure as much as possible in your local SSH and shell environments. Even hardcoding your username can be avoided.
+You can try and configure as much as possible in your local SSH config and shell environment. This will usually mean having control of the server outside your user environment, like say on your own vps.
 
 This primarily means setting __BB\_USER__ and __BB\_HOST__ localling rather than on the server.
 
@@ -104,18 +106,17 @@ Add this line to your __/etc/ssh/sshd_config__ on the server:
 AcceptEnv BB_USER BB_HOST
 ```
 
-This does increase your servers surface area for attack. I think this is reasonable as long as you are not leaving the door wide open and declaring the specific variables you will allow. The upside is that you haven’t put any info about your Mac on the server. It lives and dies with that specific SSH connection. Tradeoffs, security is hard.
-
 Lets setup a __~.ssh/config__ on your mac
-
 ```
 Host the_server
-	HostName my_server.local
-	User userS
-	SendEnv BB_USER BB_HOST
+  HostName my_server.local
+  User userS
+  SendEnv BB_USER BB_HOST
 ```
 
 Now when you ```ssh the_server```it will add __BB\_USER__ and __BB\_HOST__ to that sessions environment.
+
+This does increase your server’s surface area for attack. I think this is reasonable as long as you are not leaving the door wide open and declaring the specific variables you will allow. The upside is that you haven’t put any info about your Mac on the server. It lives and dies with that specific SSH connection. Tradeoffs, security is hard.
 
 #### An alternative to declaring __BB\_USER__ and __BB\_HOST__ in your local environment.
 
@@ -123,16 +124,16 @@ OpenSSH added the configuration `SetEnv` in late 2018. You can check `man ssh_co
 
 ```
 Host local_server
-	HostName my_server.local
-	User userS
-	SetEnv BB_USER=userC BB_HOST=my_macintosh.local
-	SendEnv BB_USER BB_HOST
+  HostName my_server.local
+  User userS
+  SetEnv BB_USER=userC BB_HOST=my_macintosh.local
+  SendEnv BB_USER BB_HOST
 
 Host remote_server
-	HostName my_server.net
-	User userRS
-	SetEnv BB_USER=userC BB_HOST=back_to_me_domain.net
-	SendEnv BB_USER BB_HOST
+  HostName my_server.net
+  User userRS
+  SetEnv BB_USER=userC BB_HOST=back_to_me_domain.net
+  SendEnv BB_USER BB_HOST
 ```
 
 #### Authentication and the SSH Agent:
@@ -150,13 +151,29 @@ Set up your __~.ssh/config__ like so.
 
 ```
 Host the_server
-	HostName my_server.local
-	User userS
-	SetEnv BB_USER=userC BB_HOST=my_macintosh.local
-	SendEnv BB_USER BB_HOST
-	AddKeysToAgent yes
-	IdentityFile ~/.ssh/<private_key>
-	ForwardAgent yes
+  HostName my_server.local
+  User userS
+  SetEnv BB_USER=userC BB_HOST=my_macintosh.local
+  SendEnv BB_USER BB_HOST
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/<private_key>
+  ForwardAgent yes
 ```
+#### The other BB variable.
 
-That’s it, everything should work and you haven’t hard coded any sensitive information about your mac on the server.
+I added a variable called _BB\_SSH\_HOST_, it is optional.
+By default the script figures the server_name@server_host string on the server. You use _BB\_SSH\_HOST_ if you want _BBEdit_ to use a specific SSH host to call back.
+
+You might want to configure a host to use [_ssh multiplexing_](https://www.cyberciti.biz/faq/linux-unix-reuse-openssh-connection/) so that after you initially open a file, subsequent saves can be faster.
+
+With a configuration something like this:
+```
+Host remote_server
+  HostName my_server.net
+  User userRS
+  SetEnv BB_USER=userC BB_SSH_HOST=remote_server
+  SendEnv BB_USER BB_SSH_HOST
+  ControlPath ~/.ssh/control-socket-%C
+  ControlMaster auto
+  ControlPersist 5m
+```
