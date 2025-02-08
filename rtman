@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+
+# Credit to Dr. Drang
+# https://leancrew.com/all-this/2023/12/again-with-man-pages-and-bbedit/
+
+# Interpret the arguments as command name and section. As with `man`,
+# the section is optional and comes first if present.
+if [ $# -lt 2 ]; then
+  cmd=${1}
+  sec='1'
+else
+  cmd=${2}
+  sec=${1}
+fi
+
+# Get the formatted man page, filter out backspaces and convert tabs
+# of the window and scroll to the top.
+# to spaces, and open the text in a new BBEdit document. Set the title
+man "$sec" "$cmd" > /dev/null || exit 16
+man "$sec" "$cmd" | col -bx | rtedit --view-top --clean -m "unix-man-page" -t "$cmd\($sec\)"
