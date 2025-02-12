@@ -8,15 +8,17 @@
 if [ $# -lt 2 ]; then
   cmd=${1}
   sec=''
+elif [ $# -gt 2 ]; then
+	echo "You should only be providing a command and an optional section for a manual page." && exit 1
 else
   cmd=${2}
   sec=${1}
 fi
 
 # Avoid the expensive call back if there is no man page.
-man $sec $cmd > /dev/null || exit 16
+man ${sec:+"$sec"} "$cmd" > /dev/null || exit 16
 
 # Get the formatted man page, filter out backspaces and convert tabs
 # to spaces, and open the text in a new BBEdit document. Set the title
 # of the window, set the document type and scroll to the top.
-man $sec $cmd | col -bx | rtedit --view-top --clean -m "unix-man-page" -t "$cmd\($sec\)"
+man ${sec:+"$sec"} "$cmd" | col -bx | rtedit --view-top --clean -m "unix-man-page" -t "$cmd\( $sec \)"
