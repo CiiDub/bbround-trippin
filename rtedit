@@ -55,7 +55,7 @@ is_valid_file_dir(){
 
 expand_filepath(){
   # I hope this covers most setups.
-  filepath=$( realpaths "$filepath" 2> /dev/null || readlink -f "$filepath" 2> /dev/null )
+  filepath=$( realpath "$filepath" 2> /dev/null || readlink -f "$filepath" 2> /dev/null )
   # Add a backslash and return if is a (-d)directory.
   [ -d "$filepath" ] && filepath="${filepath}/"
 }

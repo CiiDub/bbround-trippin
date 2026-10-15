@@ -5,10 +5,12 @@
 
 # Interpret the arguments as command name and section. As with `man`,
 # the section is optional and comes first if present.
-if [ $# -lt 2 ]; then
+if [ $# -lt 2 ]
+then
   cmd=${1}
   sec=''
-elif [ $# -gt 2 ]; then
+elif [ $# -gt 2 ]
+then
 	echo "You should only be providing a command and an optional section for a manual page." && exit 1
 else
   cmd=${2}
