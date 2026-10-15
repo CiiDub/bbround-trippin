@@ -32,7 +32,7 @@ setup_server_user_host_string(){
 create_tmp_file_if_flag(){
   # If param is -c, --create, -u or --create-unix create file.
   # BBEdit uses these params locally but not when opening a file remotely.
-  echo "$params" | grep -Eq -e '--create-unix|--create|-c|-u' || { 
+  echo "$params" | grep -Eq '--create-unix|--create|-c|-u' || { 
     tmp_file=0 &&
     return 
   }
@@ -79,7 +79,7 @@ run_me(){
   
   setup_server_user_host_string
   expand_filepath
-  ssh "$client_login" bbedit "$params" \"sftp://"${server_user_host_string}"/"${filepath}"\"
+  ssh "$client_login" bbedit -- "$params" "sftp://${server_user_host_string}/${filepath}"
   delete_tmp_file
 }
 
