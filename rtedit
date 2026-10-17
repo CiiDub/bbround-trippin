@@ -4,7 +4,7 @@ is_a_ssh_connection(){
 	# Checks for environment variable SSH_CLIENT
 	[ -n "$SSH_CLIENT" ] || {
 	  echo "Is this an SSH connection." &&
-	  echo "Did you use sudo? Remember to pass the user enviroment with -E." &&
+	  echo "Did you use sudo? Remember to pass the user environment with -E." &&
 	  exit 1
 	}
 }
@@ -60,13 +60,13 @@ expand_filepath(){
   [ -d "$filepath" ] && filepath="${filepath}/"
 }
 
+# shellcheck disable=SC2029 # Variable is meant to expand on client side.
 run_me(){
   is_a_ssh_connection
   setup_BB_vars
   client_login="${BB_USER}@${BB_HOST}"
   # Input is from STDIN. Example: ls | bbedit
   # Open BBEdit on client with piped input from server.
-  # shellcheck disable=SC2029 # Variable is meant to expand on client side.
   [ -t 0 ] || { ssh "$client_login" bbedit "$@"; exit 0; }
 
   # Input is a file from a tty.
@@ -79,7 +79,8 @@ run_me(){
   
   setup_server_user_host_string
   expand_filepath
-  ssh "$client_login" bbedit -- "$params" "sftp://${server_user_host_string}/${filepath}"
+  ssh "$client_login" "bbedit $params 'sftp://${server_user_host_string}/${filepath}'"
+
   delete_tmp_file
 }
 
