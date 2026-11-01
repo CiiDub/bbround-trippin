@@ -1,0 +1,82 @@
+#!/usr/bin/env sh
+
+# Test script for rtedit
+# This script verifies basic functionality of rtedit
+
+# Add rtedit to PATH for testing
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+RTEDIT_DIR=$(cd "$SCRIPT_DIR/../rtedit" && pwd)
+export PATH="$RTEDIT_DIR:$PATH"
+
+# Colors for output (POSIX-compliant octal format)
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Initialize test count
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
+
+# Function to run tests and record results
+test_run() {
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    printf "\n%bTesting: %s%b\n" "${BLUE}" "$1" "${NC}"
+    shift
+    
+    # Run the command string via sh -c to safely handle complex command evaluation
+    if sh -c "$1"; then
+        printf "%bPassed%b\n" "${GREEN}" "${NC}"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+    else
+        printf "%bFailed%b\n" "${RED}" "${NC}"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+    fi
+}
+
+# Test 1: Basic Usage
+test_run "Basic Usage" \
+    "echo 'Hello, BBEdit!' | rtedit /dev/null"
+
+# Test 2: Environment Variables
+export BB_USER="test_user"
+export BB_HOST="test_host"
+test_run "Environment Variables" \
+    "rtedit --view-top -m unix-man-page /etc/passwd"
+
+# Test 3: Directory Opening
+test_run "Directory Opening" \
+    "rtedit ."
+
+# Test 4: File Creation
+test_run "File Creation" \
+    "echo 'Test content' | rtedit --create test_file.txt && rm test_file.txt"
+
+# Test 5: Error Handling - Invalid File
+test_run "Error Handling (Invalid File)" \
+    "rtedit non_existent_file 2>&1 | grep 'This file does not exist'"
+
+# Test 6: Error Handling - Non-Readable File
+touch test_file
+chmod 000 test_file
+test_run "Error Handling (Permissions)" \
+    "rtedit test_file 2>&1 | grep 'Check permissions'"
+rm -f test_file
+
+# Test 7: Edge Case - No Arguments
+test_run "Edge Case (No Arguments)" \
+    "rtedit 2>&1 | grep 'Usage'"
+
+# Test 8: Edge Case - Empty Input
+test_run "Edge Case (Empty Input)" \
+    "printf '' | rtedit /dev/null"
+
+# Summary
+printf "\n%bTest Summary%b\n" "${BLUE}" "${NC}"
+printf "Total tests: %s\n" "${TOTAL_TESTS}"
+printf "Passed: %s (%s/%s)\n" "${PASSED_TESTS}" "${PASSED_TESTS}" "${TOTAL_TESTS}"
+printf "Failed: %s\n" "${FAILED_TESTS}"
+
+# Return the number of failed tests
+exit "$FAILED_TESTS"
