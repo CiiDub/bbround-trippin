@@ -106,6 +106,10 @@ Add this line to your __/etc/ssh/sshd_config__ on the server:
 AcceptEnv BB_USER BB_HOST
 ```
 
+> [!TIP]
+> Using a drop-in config file is in __/etc/ssh/sshd_config.d/__ is usually preferred over editing __sshd_config__ directly.
+> Remember that ssh uses a first come first serve model for it’s configurations. So if you load a `AcceptEnv` setting after another (such as the system default) you won’t get the changes.
+
 Lets setup a __~.ssh/config__ on your mac
 ```
 Host the_server
@@ -177,3 +181,34 @@ Host remote_server
   ControlMaster auto
   ControlPersist 5m
 ```
+
+## Testing.
+
+The repository includes a test suite  __Tests/test_rtedit__ that runs a full round-trip check over a local SSH loopback connection (`127.0.0.1`).
+
+### Prerequisites.
+
+Before running the test suite on your Mac, make sure your local environment allows the script to loop back into itself:
+
+1. **Enable Remote Login:** Go to **System Settings > General > Sharing** and turn on **Remote Login** (SSH).
+2. **Allow Environment Variables:** Rather than editing __/etc/ssh/sshd_config__ directly, add a drop-in configuration file at __/etc/ssh/sshd_config.d/01-rtedit.conf__ to preserve macOS's default locale variables alongside the `BB_*` variables:
+   ```text
+   AcceptEnv LANG LC_* BB_USER BB_HOST BB_SSH_HOST
+   ```
+   *(Toggle Remote Login off and back on—or restart `sshd`—after creating the file).*
+3. **SSH Key & Agent:** Add your local SSH public key to __~/.ssh/authorized_keys__ and ensure your key is loaded in your SSH agent (`ssh-add`) for passwordless loopback authentication.
+4. **BBEdit CLI Tool:** Confirm `bbedit` is installed and accessible in your `PATH`.
+
+### Running the tests.
+
+From the root of the repository, run:
+
+```sh
+./Tests/test_rtedit
+```
+
+The script dynamically generates a temporary SSH config (__Tests/ssh_config.run__), runs 12 tests covering file opening, directory browsing, piping, flag combinations, and permission/error handling, prints a dated summary, and cleans up after itself.
+
+> [!NOTE]
+> Running the test suite will open several temporary documents and SFTP browser windows in BBEdit on your Mac. This is normal, don’t fret.
+
