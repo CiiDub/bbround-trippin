@@ -60,7 +60,8 @@ expand_filepath(){
   [ -d "$filepath" ] && filepath="${filepath}/"
 }
 
-# shellcheck disable=SC2029 # Variable is meant to expand on client side.
+# Variable is meant to expand on client side.
+# shellcheck disable=SC2029 
 run_me(){
   is_a_ssh_connection
   setup_BB_vars

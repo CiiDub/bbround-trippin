@@ -21,6 +21,13 @@ FAILED_TESTS=0
 # Configure Dynamic SSH Test Environment variables
 LOCAL_USER=$(whoami)
 LOCAL_HOST="localhost"
+TEST_KEY="$HOME/.ssh/id_ed25519_rtedit_test"
+TEST_AGENT_SOCK=""
+if [ -f "$TEST_KEY" ]; then
+    TEST_AGENT_SOCK="$SCRIPT_DIR/test_agent.sock"
+    eval "$(ssh-agent -a "$TEST_AGENT_SOCK" -s)" >/dev/null
+    SSH_AUTH_SOCK="$TEST_AGENT_SOCK" ssh-add "$TEST_KEY" 2>/dev/null
+fi
 TEST_CONFIG="$SCRIPT_DIR/ssh_config.run"
 
 # Dynamically construct the loopback config file (POSIX-safe string formatting)
@@ -28,6 +35,11 @@ TEST_CONFIG="$SCRIPT_DIR/ssh_config.run"
     printf 'Host test-loopback\n'
     printf '    HostName 127.0.0.1\n'
     printf '    User %s\n' "$LOCAL_USER"
+    if [ -n "$TEST_AGENT_SOCK" ]; then
+        printf '    IdentityFile %s\n' "$TEST_KEY"
+        printf '    IdentitiesOnly yes\n'
+        printf '    IdentityAgent %s\n' "$TEST_AGENT_SOCK"
+    fi
     printf '    ForwardAgent yes\n'
     printf '    SetEnv BB_USER=%s BB_HOST=%s\n' "$LOCAL_USER" "$LOCAL_HOST"
     printf '    SendEnv BB_USER BB_HOST\n'
@@ -117,7 +129,11 @@ printf "Total tests: %s\n" "${TOTAL_TESTS}"
 printf "Passed: %s (%s/%s)\n" "${PASSED_TESTS}" "${PASSED_TESTS}" "${TOTAL_TESTS}"
 printf "Failed: %s\n" "${FAILED_TESTS}"
 
-# Wipe runtime artifacts
+# Wipe runtime artifacts and stop the temporary test agent (if started)
+if [ -n "$TEST_AGENT_SOCK" ]; then
+    ssh-agent -k >/dev/null 2>&1
+    rm -f "$TEST_AGENT_SOCK"
+fi
 rm -f "$TEST_CONFIG"
 
 # Return the number of failed tests
