@@ -22,30 +22,45 @@ FAILED_TESTS=0
 LOCAL_USER=$(whoami)
 LOCAL_HOST="localhost"
 TEST_KEY="$HOME/.ssh/id_ed25519_rtedit_test"
-TEST_AGENT_SOCK=""
-if [ -f "$TEST_KEY" ]; then
-    TEST_AGENT_SOCK="$SCRIPT_DIR/test_agent.sock"
-    eval "$(ssh-agent -a "$TEST_AGENT_SOCK" -s)" >/dev/null
-    SSH_AUTH_SOCK="$TEST_AGENT_SOCK" ssh-add "$TEST_KEY" 2>/dev/null
-fi
+TEST_AGENT_SOCK="/tmp/rtedit-test-agent.$$.sock"
 TEST_CONFIG="$SCRIPT_DIR/ssh_config.run"
+TEST_AGENT_PID=""
+
+# shellcheck disable=SC2329
+cleanup() {
+    RC=$?
+    if [ -n "$TEST_AGENT_PID" ]; then
+        kill "$TEST_AGENT_PID" >/dev/null 2>&1
+    fi
+    rm -f "$TEST_AGENT_SOCK" "$TEST_CONFIG"
+    trap - EXIT
+    exit "$RC"
+}
+trap cleanup EXIT INT TERM
+
+if [ ! -f "$TEST_KEY" ]; then
+    printf "%bError: Missing test key %s%b\n" "${RED}" "$TEST_KEY" "${NC}" >&2
+    exit 1
+fi
+
+rm -f "$TEST_AGENT_SOCK"
+TEST_AGENT_PID=$(ssh-agent -a "$TEST_AGENT_SOCK" -s | sed -n 's/^SSH_AGENT_PID=\([0-9]*\);.*/\1/p')
+SSH_AUTH_SOCK="$TEST_AGENT_SOCK" ssh-add "$TEST_KEY" >/dev/null 2>&1
 
 # Dynamically construct the loopback config file (POSIX-safe string formatting)
 {
     printf 'Host test-loopback\n'
     printf '    HostName 127.0.0.1\n'
     printf '    User %s\n' "$LOCAL_USER"
-    if [ -n "$TEST_AGENT_SOCK" ]; then
-        printf '    IdentityFile %s\n' "$TEST_KEY"
-        printf '    IdentitiesOnly yes\n'
-        printf '    IdentityAgent %s\n' "$TEST_AGENT_SOCK"
-    fi
+    printf '    IdentityFile %s\n' "$TEST_KEY"
+    printf '    IdentitiesOnly yes\n'
+    printf '    IdentityAgent "%s"\n' "$TEST_AGENT_SOCK"
     printf '    ForwardAgent yes\n'
     printf '    SetEnv BB_USER=%s BB_HOST=%s\n' "$LOCAL_USER" "$LOCAL_HOST"
     printf '    SendEnv BB_USER BB_HOST\n'
     printf '    StrictHostKeyChecking no\n'
     printf '    UserKnownHostsFile /dev/null\n'
-    printf '    LogLevel QUIET\n'
+printf '    LogLevel ERROR\n'
 } > "$TEST_CONFIG"
 
 # Function to run tests and record results
@@ -105,7 +120,7 @@ test_run "Edge Case (Empty Input)" \
 # Test 9: Flag Combination - Create + View Top
 # Verifies that a file can be created and immediately forced to scroll to the top window view
 test_run "Flag Combination (Create + View Top)" \
-    "echo 'Line 1\nLine 2' | rtedit --create --view-top test_combo_1.txt && rm test_combo_1.txt"
+    "printf 'Line 1\nLine 2\n' | rtedit --create --view-top test_combo_1.txt && rm test_combo_1.txt"
 
 # Test 10: Flag Combination - Create + Language Mode
 # Verifies that rtedit successfully creates a file while overriding the editor syntax mapping
@@ -129,12 +144,4 @@ printf "Total tests: %s\n" "${TOTAL_TESTS}"
 printf "Passed: %s (%s/%s)\n" "${PASSED_TESTS}" "${PASSED_TESTS}" "${TOTAL_TESTS}"
 printf "Failed: %s\n" "${FAILED_TESTS}"
 
-# Wipe runtime artifacts and stop the temporary test agent (if started)
-if [ -n "$TEST_AGENT_SOCK" ]; then
-    ssh-agent -k >/dev/null 2>&1
-    rm -f "$TEST_AGENT_SOCK"
-fi
-rm -f "$TEST_CONFIG"
-
-# Return the number of failed tests
 exit "$FAILED_TESTS"
