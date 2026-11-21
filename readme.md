@@ -147,7 +147,7 @@ Host remote_server
 
 You should have an SSH key pair set up in order to login to your server.
 
-You don’t want to make a set of keys on the server, but you have to make an SSH connection back to your mac. You can use Agent Forwarding to to safely pass your private key from your mac to your server and back to your mac.
+You don’t want to make a set of keys on the server, but you have to make an SSH connection back to your mac. You can use Agent Forwarding to to _safely_ pass your private key from your mac to your server and back to your mac.
 
 Add your public key to __~/.ssh/authorized_keys__
 
@@ -163,6 +163,12 @@ Host the_server
   IdentityFile ~/.ssh/<private_key>
   ForwardAgent yes
 ```
+
+> [!WARNING]
+> Using `ForwardAgent yes` with your primary SSH agent exposes all loaded keys on that agent to anyone with `root` access on the remote server. By default you are likely running one agent on your Mac, so all your SSH keys would be accessable if that server were compromised.
+> 
+> For a little guidance, see [How I Hardened My Security or Don't get your keys stolen!](security.md.md).
+
 #### The other BB variable.
 
 I added a variable called _BB\_SSH\_HOST_, it is optional.
@@ -190,14 +196,14 @@ The repository includes a test suite  __Tests/test_rtedit__ that runs a full rou
 
 Before running the test suite on your Mac, make sure your local environment allows the script to loop back into itself:
 
-1. **Enable Remote Login:** Go to **System Settings > General > Sharing** and turn on **Remote Login** (SSH).
-2. **Allow Environment Variables:** Rather than editing __/etc/ssh/sshd_config__ directly, add a drop-in configuration file at __/etc/ssh/sshd_config.d/01-rtedit.conf__ to preserve macOS's default locale variables alongside the `BB_*` variables:
+1. __Enable Remote Login:__ Go to **System Settings > General > Sharing__ and turn on __Remote Login** (SSH).
+2. __Allow Environment Variables:__ Rather than editing __/etc/ssh/sshd_config__ directly, add a drop-in configuration file at __/etc/ssh/sshd_config.d/01-rtedit.conf__ to preserve macOS's default locale variables alongside the `BB_*` variables:
    ```text
    AcceptEnv LANG LC_* BB_USER BB_HOST BB_SSH_HOST
    ```
    *(Toggle Remote Login off and back on—or restart `sshd`—after creating the file).*
 3. **SSH Key & Agent:** Add your local SSH public key to __~/.ssh/authorized_keys__ and ensure your key is loaded in your SSH agent (`ssh-add`) for passwordless loopback authentication.
-4. **BBEdit CLI Tool:** Confirm `bbedit` is installed and accessible in your `PATH`.
+4. __BBEdit CLI Tool:__ Confirm `bbedit` is installed and accessible in your `PATH`.
 
 ### Running the tests.
 
