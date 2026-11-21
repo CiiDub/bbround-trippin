@@ -167,7 +167,7 @@ Host the_server
 > [!WARNING]
 > Using `ForwardAgent yes` with your primary SSH agent exposes all loaded keys on that agent to anyone with `root` access on the remote server. By default you are likely running one agent on your Mac, so all your SSH keys would be accessable if that server were compromised.
 > 
-> For a little guidance, see [How I Hardened My Security or Don't get your keys stolen!](security.md.md).
+> For a little guidance, see [How I Hardened My Security or Don't get your keys stolen!](security.md).
 
 #### The other BB variable.
 
