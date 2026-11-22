@@ -21,7 +21,7 @@ FAILED_TESTS=0
 # Configure Dynamic SSH Test Environment variables
 LOCAL_USER=$(whoami)
 LOCAL_HOST="localhost"
-TEST_KEY="$HOME/.ssh/id_ed25519_rtedit_test"
+TEST_KEY="${TEST_KEY:-$HOME/.ssh/id_ed25519_rtedit_test}"
 TEST_AGENT_SOCK="/tmp/rtedit-test-agent.$$.sock"
 TEST_CONFIG="$SCRIPT_DIR/ssh_config.run"
 TEST_AGENT_PID=""
@@ -38,23 +38,30 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-if [ ! -f "$TEST_KEY" ]; then
-    printf "%bError: Missing test key %s%b\n" "${RED}" "$TEST_KEY" "${NC}" >&2
-    exit 1
+USE_DEDICATED_KEY=0
+if [ -f "$TEST_KEY" ]; then
+    USE_DEDICATED_KEY=1
+    rm -f "$TEST_AGENT_SOCK"
+    TEST_AGENT_PID=$(ssh-agent -a "$TEST_AGENT_SOCK" -s | sed -n 's/^SSH_AGENT_PID=\([0-9]*\);.*/\1/p')
+    if ! SSH_AUTH_SOCK="$TEST_AGENT_SOCK" ssh-add "$TEST_KEY" >/dev/null 2>&1; then
+        printf "%bError: Failed to load test key %s into temporary agent%b\n" "${RED}" "$TEST_KEY" "${NC}" >&2
+        exit 1
+    fi
+    printf "%bSSH Auth: Using dedicated test key (%s) with isolated agent%b\n" "${BLUE}" "$TEST_KEY" "${NC}"
+else
+    printf "%bSSH Auth: Dedicated test key not found; using default SSH agent/keys%b\n" "${BLUE}" "${NC}"
 fi
-
-rm -f "$TEST_AGENT_SOCK"
-TEST_AGENT_PID=$(ssh-agent -a "$TEST_AGENT_SOCK" -s | sed -n 's/^SSH_AGENT_PID=\([0-9]*\);.*/\1/p')
-SSH_AUTH_SOCK="$TEST_AGENT_SOCK" ssh-add "$TEST_KEY" >/dev/null 2>&1
 
 # Dynamically construct the loopback config file (POSIX-safe string formatting)
 {
     printf 'Host test-loopback\n'
     printf '    HostName 127.0.0.1\n'
     printf '    User %s\n' "$LOCAL_USER"
-    printf '    IdentityFile %s\n' "$TEST_KEY"
-    printf '    IdentitiesOnly yes\n'
-    printf '    IdentityAgent "%s"\n' "$TEST_AGENT_SOCK"
+    if [ "$USE_DEDICATED_KEY" -eq 1 ]; then
+        printf '    IdentityFile %s\n' "$TEST_KEY"
+        printf '    IdentitiesOnly yes\n'
+        printf '    IdentityAgent "%s"\n' "$TEST_AGENT_SOCK"
+    fi
     printf '    ForwardAgent yes\n'
     printf '    SetEnv BB_USER=%s BB_HOST=%s\n' "$LOCAL_USER" "$LOCAL_HOST"
     printf '    SendEnv BB_USER BB_HOST\n'

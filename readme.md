@@ -201,8 +201,16 @@ Before running the test suite on your Mac, make sure your local environment allo
    ```text
    AcceptEnv LANG LC_* BB_USER BB_HOST BB_SSH_HOST
    ```
-   *(Toggle Remote Login off and back on—or restart `sshd`—after creating the file).*
-1. **SSH Key & Agent:** Add your local SSH public key to __~/.ssh/authorized_keys__ and ensure your key is loaded in your SSH agent (`ssh-add`) for passwordless loopback authentication.
+   *Toggle Remote Login off and back on—or restart `sshd`—after creating the file.*
+1. __SSH Key & Agent:__ Add your local SSH public key to __~/.ssh/authorized_keys__ and ensure your key is loaded in your SSH agent `ssh-add` for passwordless loopback authentication.
+  
+    Optionally, to isolate test authentication from your primary agent, generate a dedicated test key at __~/.ssh/id_ed25519_rtedit_test__ or and append its public key to __~/.ssh/authorized_keys__:
+   
+     ```sh
+     ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_rtedit_test
+     cat ~/.ssh/id_ed25519_rtedit_test.pub >> ~/.ssh/authorized_keys
+     ```
+   
 1. __BBEdit CLI Tool:__ Confirm `bbedit` is installed and accessible in your `PATH`.
 
 ### Running the tests.
