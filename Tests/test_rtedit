@@ -60,7 +60,7 @@ SSH_AUTH_SOCK="$TEST_AGENT_SOCK" ssh-add "$TEST_KEY" >/dev/null 2>&1
     printf '    SendEnv BB_USER BB_HOST\n'
     printf '    StrictHostKeyChecking no\n'
     printf '    UserKnownHostsFile /dev/null\n'
-printf '    LogLevel ERROR\n'
+    printf '    LogLevel ERROR\n'
 } > "$TEST_CONFIG"
 
 # Function to run tests and record results
