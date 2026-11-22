@@ -2,12 +2,12 @@
 
  I used SSH agent forwarding (`ForwardAgent yes`) to use the same SSH key to access my mac that allowed access to the server. While secure in the sense that a key is not saved on the server, forwarding your primary SSH agent exposes all loaded keys on that agent to anyone with `root` access on the remote server, and an unrestricted callback key would allow a compromised server to execute arbitrary commands on your Mac.
 
-Once again I am not a security expert. You may want to use this setup or just some of it. You might use something like [tailscale](https://tailscale.com) or setup your own VPN rather then using a reverse SSH tunnel (see step 4). I would argue that steps 1-3 are best practices.
+Once again I am not a security expert. You may want to use this setup or just some of it. You might use something like [tailscale](https://tailscale.com) or setup your own VPN rather then using a reverse SSH tunnel (see step 4). I would argue that steps 1-3 are best practices for the use of this script.
 
 1. __Dedicated Callback Key:__ Separates `rtedit` authentication from your primary SSH identity.
-2. __Command-Restricted Wrapper:__ Forces incoming callback connections to run *only* `bbedit` and blocks shell injection.
-3. __Isolated ssh-agent Socket:__ Ensures remote servers only ever see the restricted callback key—never your primary keys.
-4. __Reverse SSH Tunneling:__ Routes callbacks back to your Mac over your existing encrypted SSH connection with zero open ports on your router or firewall.
+1. __Command-Restricted Wrapper:__ Forces incoming callback connections to run *only* `bbedit` and blocks shell injection.
+1. __Isolated ssh-agent Socket:__ Ensures remote servers only ever see the restricted callback key—never your primary keys.
+1. __Reverse SSH Tunneling:__ Routes callbacks back to your Mac over your existing encrypted SSH connection with zero open ports on your router or firewall.
 
 ---
 
@@ -22,6 +22,8 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_rtedit -C "rtedit-callback"
 # 2. Unrestricted loopback key used strictly by Tests/test_rtedit (no passphrase for automated runs)
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_rtedit_test -N "" -C "rtedit-loopback-test"
 ```
+> [!NOTE]
+> The names of the _rtedit-loopback-test_ key matters, `test_rtedit` will look for this key specifically.
 
 ---
 
@@ -76,7 +78,8 @@ Install *only* __id_ed25519_rtedit.pub__ on each remote server you want to use `
 ssh-copy-id -i ~/.ssh/id_ed25519_rtedit.pub <REMOTE_HOST>
 ```
 
-*(Note: If you already use `ControlMaster` for `<REMOTE_HOST>`, pass `-f` to `ssh-copy-id` once so it appends the new key without skipping it.)*
+> [!NOTE]
+> If you already use `ControlMaster` for `<REMOTE_HOST>`, pass `-f` to `ssh-copy-id` once so it appends the new key without skipping it.
 
 ---
 
@@ -185,12 +188,12 @@ Run these three checks from your Mac after connecting to a configured server:
    ssh server-one 'ssh-add -l'
    # Expected: 256 SHA256:... rtedit-callback (ED25519)
    ```
-2. __Command Restriction:__ Confirm arbitrary commands are blocked over the callback tunnel:
+1. __Command Restriction:__ Confirm arbitrary commands are blocked over the callback tunnel:
    ```sh
    ssh server-one 'ssh <YOUR_MAC_USER>@mac-callback whoami'
    # Expected: Only bbedit is permitted
    ```
-3. __End-to-End File Editing:__ Confirm `rtedit` opens remote files cleanly in BBEdit:
+1. __End-to-End File Editing:__ Confirm `rtedit` opens remote files cleanly in BBEdit:
    ```sh
    ssh -t server-one 'rtedit /etc/hosts'
    ```
