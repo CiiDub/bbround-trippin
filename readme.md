@@ -21,15 +21,15 @@ Including pipes and flags:
 
 ## Install and configure.
 
-1) Copy shell script __rtedit__ to a server you can configure. *If you rename the script bbedit the command will look exactly like their local version*
+1. Copy shell script __rtedit__ to a server you can configure. *If you rename the script bbedit the command will look exactly like their local version*
 
-1) Place in a dir accessable by the users __PATH__. Such as __/usr/local/bin__.
+1. Place in a dir accessable by the users __PATH__. Such as __/usr/local/bin__.
 
-1) Make the script executable.
+1. Make the script executable.
 
-1) Set env variable __BB_USER__ to your username on the client mac.
+1. Set env variable __BB_USER__ to your username on the client mac.
 
-1) Set env variable __BB_HOST__ to the hostname of the client mac. -*This is optional* 
+1. Set env variable __BB_HOST__ to the hostname of the client mac. -*This is optional* 
 
 ## Admissions, assumptions, concerns, and more configurations.
 
@@ -197,13 +197,13 @@ The repository includes a test suite  __Tests/test_rtedit__ that runs a full rou
 Before running the test suite on your Mac, make sure your local environment allows the script to loop back into itself:
 
 1. __Enable Remote Login:__ Go to **System Settings > General > Sharing__ and turn on __Remote Login** (SSH).
-2. __Allow Environment Variables:__ Rather than editing __/etc/ssh/sshd_config__ directly, add a drop-in configuration file at __/etc/ssh/sshd_config.d/01-rtedit.conf__ to preserve macOS's default locale variables alongside the `BB_*` variables:
+1. __Allow Environment Variables:__ Rather than editing __/etc/ssh/sshd_config__ directly, add a drop-in configuration file at __/etc/ssh/sshd_config.d/11-rtedit.conf__ to preserve macOS's default locale variables alongside the `BB_*` variables:
    ```text
    AcceptEnv LANG LC_* BB_USER BB_HOST BB_SSH_HOST
    ```
    *(Toggle Remote Login off and back on—or restart `sshd`—after creating the file).*
-3. **SSH Key & Agent:** Add your local SSH public key to __~/.ssh/authorized_keys__ and ensure your key is loaded in your SSH agent (`ssh-add`) for passwordless loopback authentication.
-4. __BBEdit CLI Tool:__ Confirm `bbedit` is installed and accessible in your `PATH`.
+1. **SSH Key & Agent:** Add your local SSH public key to __~/.ssh/authorized_keys__ and ensure your key is loaded in your SSH agent (`ssh-add`) for passwordless loopback authentication.
+1. __BBEdit CLI Tool:__ Confirm `bbedit` is installed and accessible in your `PATH`.
 
 ### Running the tests.
 
