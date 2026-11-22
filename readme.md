@@ -31,6 +31,8 @@ Including pipes and flags:
 
 1. Set env variable __BB_HOST__ to the hostname of the client mac. -*This is optional* 
 
+My goal is to have `rtedit` not take it’s own parameters but pass them to `bbedit`. It’s behaviour is dictated by how you setup your environment, most importantly your SSH configuration.
+
 ## Admissions, assumptions, concerns, and more configurations.
 
 I am not a security expert, so weigh my advice and the use of this script accordingly. BBRound Trippin’ exploits remote access to the server and to your client.
