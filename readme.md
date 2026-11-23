@@ -17,13 +17,13 @@ Use it in a very similar way as you would with local files:
 
 Including pipes and flags:
 
-- ```Server_Prompt$ man seq | col -b | rtedit --view-top -m unix-man-page``` --> _Opens the manual for __seq__ in BBedit with the language set to Unix man page and the window scrolled to the top._
+- ```Server_Prompt$ man seq | col -b | rtedit --view-top -m unix-man-page``` --> _Opens the manual for __seq__ in BBEdit with the language set to Unix man page and the window scrolled to the top._
 
 ## Install and configure.
 
 1. Copy shell script __rtedit__ to a server you can configure. *If you rename the script bbedit the command will look exactly like their local version*
 
-1. Place in a dir accessable by the users __PATH__. Such as __/usr/local/bin__.
+1. Place in a dir accessible by the users __PATH__. Such as __/usr/local/bin__.
 
 1. Make the script executable.
 
@@ -31,9 +31,11 @@ Including pipes and flags:
 
 1. Set env variable __BB_HOST__ to the hostname of the client mac. -*This is optional* 
 
-My goal is to have `rtedit` not take it’s own parameters but pass them to `bbedit`. It’s behaviour is dictated by how you setup your environment, most importantly your SSH configuration.
+My goal is to have `rtedit` not take its own parameters but pass them to `bbedit`. Its behaviour is dictated by how you set up your environment, most importantly your SSH configuration.
 
 ## Admissions, assumptions, concerns, and more configurations.
+
+First of all, and this is very important, you could always just use `vim`.
 
 I am not a security expert, so weigh my advice and the use of this script accordingly. BBRound Trippin’ exploits remote access to the server and to your client.
 
@@ -54,7 +56,7 @@ I’d like to offer a setup that is at least reasonable, if not diligent.
 
 1) When you open a file with```Server_Prompt$ rtedit file_name.txt``` the script sends a properly formatted command with parameters back to your mac via SSH.
 
-1) Now BBEdit opens __file_name.txt__ via it’s own SSH (sftp) connections, leaving you with two mac to server connections; one from your terminal, the other from BBEdit.
+1) Now BBEdit opens __file_name.txt__ via its own SSH (sftp) connections, leaving you with two mac to server connections; one from your terminal, the other from BBEdit.
 
 It’s that second step 🤨; keep an eye on it.
 
@@ -82,7 +84,7 @@ fi
 
 You can try and configure as much as possible in your local SSH config and shell environment. This will usually mean having control of the server outside your user environment, like say on your own vps.
 
-This primarily means setting __BB\_USER__ and __BB\_HOST__ localling rather than on the server.
+This primarily means setting __BB\_USER__ and __BB\_HOST__ locally rather than on the server.
 
 Your hostname/ip can be surmised on from your SSH connection, so __BB\_HOST__ is optional, even though I set it manually in all my examples.
 
@@ -95,7 +97,7 @@ export BB_USER="userC"
 export BB_HOST="$(hostname)"	
 ```
 
-There are a number of ways to setup BB\_HOST. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time.
+There are a number of ways to set up BB\_HOST. On most macs “$(hostname)” will expand to something like my\_macintosh.local. You can configure your hostname in the Sharing preference panel. This is great because it avoids using your mac’s ip, which is probably changing all the time.
 
 You also might set a domain like back\_to\_me\_domain.net if you want to point back at your mac from outside your network.
 
@@ -109,10 +111,10 @@ AcceptEnv BB_USER BB_HOST
 ```
 
 > [!TIP]
-> Using a drop-in config file is in __/etc/ssh/sshd_config.d/__ is usually preferred over editing __sshd_config__ directly.
-> Remember that ssh uses a first come first serve model for it’s configurations. So if you load a `AcceptEnv` setting after another (such as the system default) you won’t get the changes.
+> Using a drop-in config file in __/etc/ssh/sshd_config.d/__ is usually preferred over editing __sshd_config__ directly.
+> Remember that ssh uses a first come first serve model for its configurations. So if you load an `AcceptEnv` setting after another (such as the system default) you won’t get the changes.
 
-Lets setup a __~.ssh/config__ on your mac
+Let’s set up a __~/.ssh/config__ on your mac
 ```
 Host the_server
   HostName my_server.local
@@ -120,13 +122,13 @@ Host the_server
   SendEnv BB_USER BB_HOST
 ```
 
-Now when you ```ssh the_server```it will add __BB\_USER__ and __BB\_HOST__ to that sessions environment.
+Now when you ```ssh the_server```it will add __BB\_USER__ and __BB\_HOST__ to that session’s environment.
 
 This does increase your server’s surface area for attack. I think this is reasonable as long as you are not leaving the door wide open and declaring the specific variables you will allow. The upside is that you haven’t put any info about your Mac on the server. It lives and dies with that specific SSH connection. Tradeoffs, security is hard.
 
 #### An alternative to declaring __BB\_USER__ and __BB\_HOST__ in your local environment.
 
-OpenSSH added the configuration `SetEnv` in late 2018. You can check `man ssh_config` to see if your version supports it. It’s a better option as you can configure BBRound Trippn’ in __~.ssh/config__ on a host by host basis.
+OpenSSH added the configuration `SetEnv` in late 2018. You can check `man ssh_config` to see if your version supports it. Its a better option as you can configure BBRound Trippin’ in __~/.ssh/config__ on a host by host basis.
 
 ```
 Host local_server
@@ -147,13 +149,13 @@ Host remote_server
 [Don’t use a password](https://medium.com/macoclock/set-up-ssh-on-macos-89e8354d8b63
 ), and have only one set of keys.
 
-You should have an SSH key pair set up in order to login to your server.
+You should have an SSH key pair set up in order to log in to your server.
 
-You don’t want to make a set of keys on the server, but you have to make an SSH connection back to your mac. You can use Agent Forwarding to to _safely_ pass your private key from your mac to your server and back to your mac.
+You don’t want to make a set of keys on the server, but you have to make an SSH connection back to your mac. You can use Agent Forwarding to _safely_ pass your private key from your mac to your server and back to your mac.
 
 Add your public key to __~/.ssh/authorized_keys__
 
-Set up your __~.ssh/config__ like so.
+Set up your __~/.ssh/config__ like so.
 
 ```
 Host the_server
@@ -167,7 +169,7 @@ Host the_server
 ```
 
 > [!WARNING]
-> Using `ForwardAgent yes` with your primary SSH agent exposes all loaded keys on that agent to anyone with `root` access on the remote server. By default you are likely running one agent on your Mac, so all your SSH keys would be accessable if that server were compromised.
+> Using `ForwardAgent yes` with your primary SSH agent exposes all loaded keys on that agent to anyone with `root` access on the remote server. By default you are likely running one agent on your Mac, so all your SSH keys would be accessible if that server were compromised.
 > 
 > For a little guidance, see [How I Hardened My Security or Don't get your keys stolen!](security.md).
 
@@ -192,7 +194,7 @@ Host remote_server
 
 ## Testing.
 
-The repository includes a test suite  __Tests/test_rtedit__ that runs a full round-trip check over a local SSH loopback connection (`127.0.0.1`).
+The repository includes a test suite __Tests/test_rtedit__ that runs a full round-trip check over a local SSH loopback connection (`127.0.0.1`).
 
 ### Prerequisites.
 
@@ -206,7 +208,7 @@ Before running the test suite on your Mac, make sure your local environment allo
    *Toggle Remote Login off and back on—or restart `sshd`—after creating the file.*
 1. __SSH Key & Agent:__ Add your local SSH public key to __~/.ssh/authorized_keys__ and ensure your key is loaded in your SSH agent `ssh-add` for passwordless loopback authentication.
   
-    Optionally, to isolate test authentication from your primary agent, generate a dedicated test key at __~/.ssh/id_ed25519_rtedit_test__ or and append its public key to __~/.ssh/authorized_keys__:
+    Optionally, to isolate test authentication from your primary agent, generate a dedicated test key at __~/.ssh/id_ed25519_rtedit_test__ and append its public key to __~/.ssh/authorized_keys__:
    
      ```sh
      ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_rtedit_test
